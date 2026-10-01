@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculator</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #dbeafe, #f8fafc);
+    font-family: Arial, sans-serif;
+  }
+
+  h2 {
+    margin-bottom: 8px;
+    color: #0f172a;
+  }
+
+  p {
+    max-width: 600px;
+    padding: 16px 20px;
+    color: #334155;
+    background-color: #f1f5f9;
+    border-left: 4px solid #3b82f6;
+    border-radius: 6px;
+    font-family: Arial, sans-serif;
+    font-size: 18px;
+    line-height: 1.6;
+  }
+
+  .calculator {
+    width: min(340px, calc(100% - 32px));
+    margin-top: 16px;
+    padding: 20px;
+    background: #0f172a;
+    border-radius: 18px;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.25);
+  }
+
+  .display {
+    width: 100%;
+    height: 78px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    overflow: hidden;
+    color: #f8fafc;
+    background: #1e293b;
+    border-radius: 10px;
+    font-size: 36px;
+    line-height: 54px;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  button {
+    height: 58px;
+    border: 0;
+    border-radius: 10px;
+    color: #0f172a;
+    background: #e2e8f0;
+    font-size: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s, background-color 0.2s;
+  }
+
+  button:hover {
+    background: #cbd5e1;
+  }
+
+  button:active {
+    transform: scale(0.96);
+  }
+
+  .operator {
+    color: white;
+    background: #22c55e;
+  }
+
+  .operator:hover {
+    background: #16a34a;
+  }
+
+  .utility {
+    color: white;
+    background: #ef4444;
+  }
+
+  .utility:hover {
+    background: #dc2626;
+  }
+
+  .zero {
+    grid-column: span 2;
+  }
+</style>
+</head>
+<body>
+<h2>CODE</h2>
+<p>A paraphraph</p>
+
+<main class="calculator" aria-label="Calculator">
+  <div id="display" class="display" role="status" aria-live="polite">0</div>
+  <div class="buttons">
+    <button class="utility" data-action="clear">AC</button>
+    <button class="utility" data-action="delete" aria-label="Delete last digit">DEL</button>
+    <button class="operator" data-operator="%">%</button>
+    <button class="operator" data-operator="/">÷</button>
+
+    <button data-number="7">7</button>
+    <button data-number="8">8</button>
+    <button data-number="9">9</button>
+    <button class="operator" data-operator="*">×</button>
+
+    <button data-number="4">4</button>
+    <button data-number="5">5</button>
+    <button data-number="6">6</button>
+    <button class="operator" data-operator="-">−</button>
+
+    <button data-number="1">1</button>
+    <button data-number="2">2</button>
+    <button data-number="3">3</button>
+    <button class="operator" data-operator="+">+</button>
+
+    <button class="zero" data-number="0">0</button>
+    <button data-number=".">.</button>
+    <button class="operator equals" data-action="equals">=</button>
+  </div>
+</main>
+
+<script>
+  const display = document.querySelector("#display");
+  const calculator = document.querySelector(".calculator");
+
+  let currentValue = "0";
+  let storedValue = null;
+  let pendingOperator = null;
+  let replaceDisplay = false;
+
+  function updateDisplay() {
+    display.textContent = currentValue;
+  }
+
+  function enterNumber(value) {
+    if (replaceDisplay) {
+      currentValue = value === "." ? "0." : value;
+      replaceDisplay = false;
+    } else if (value === ".") {
+      if (!currentValue.includes(".")) currentValue += ".";
+    } else {
+      currentValue = currentValue === "0" ? value : currentValue + value;
+    }
+    updateDisplay();
+  }
+
+  function calculate(first, second, operator) {
+    if (operator === "+") return first + second;
+    if (operator === "-") return first - second;
+    if (operator === "*") return first * second;
+    if (operator === "/") return second === 0 ? null : first / second;
+    if (operator === "%") return first % second;
+    return second;
+  }
+
+  function chooseOperator(operator) {
+    const input = Number(currentValue);
+
+    if (pendingOperator && !replaceDisplay) {
+      const result = calculate(storedValue, input, pendingOperator);
+      if (result === null) {
+        currentValue = "Cannot divide by zero";
+        storedValue = null;
+        pendingOperator = null;
+        replaceDisplay = true;
+        updateDisplay();
+        return;
+      }
+      currentValue = String(Number(result.toFixed(10)));
+      storedValue = Number(currentValue);
+      updateDisplay();
+    } else {
+      storedValue = input;
+    }
+
+    pendingOperator = operator;
+    replaceDisplay = true;
+  }
+
+  function showResult() {
+    if (!pendingOperator || replaceDisplay) return;
+    const result = calculate(storedValue, Number(currentValue), pendingOperator);
+    currentValue = result === null ? "Cannot divide by zero" : String(Number(result.toFixed(10)));
+    storedValue = null;
+    pendingOperator = null;
+    replaceDisplay = true;
+    updateDisplay();
+  }
+
+  function clearCalculator() {
+    currentValue = "0";
+    storedValue = null;
+    pendingOperator = null;
+    replaceDisplay = false;
+    updateDisplay();
+  }
+
+  calculator.addEventListener("click", (event) => {
+    const button = event.target.closest("button");
+    if (!button) return;
+
+    if (button.dataset.number) enterNumber(button.dataset.number);
+    if (button.dataset.operator) chooseOperator(button.dataset.operator);
+    if (button.dataset.action === "equals") showResult();
+    if (button.dataset.action === "clear") clearCalculator();
+    if (button.dataset.action === "delete" && !replaceDisplay) {
+      currentValue = currentValue.length > 1 ? currentValue.slice(0, -1) : "0";
+      updateDisplay();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (/^[0-9.]$/.test(event.key)) enterNumber(event.key);
+    else if (["+", "-", "*", "/", "%"].includes(event.key)) chooseOperator(event.key);
+    else if (event.key === "Enter" || event.key === "=") showResult();
+    else if (event.key === "Escape") clearCalculator();
+    else if (event.key === "Backspace" && !replaceDisplay) {
+      currentValue = currentValue.length > 1 ? currentValue.slice(0, -1) : "0";
+      updateDisplay();
+    }
+  });
+</script>
+</body>
+</html>
